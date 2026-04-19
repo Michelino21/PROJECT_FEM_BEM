@@ -36,6 +36,4 @@ codegen/
 .buildtool/
 
 # HIDE DOCUMENTS
-ZZZ/*
-Bibliography/*
-
+.DS_Store
