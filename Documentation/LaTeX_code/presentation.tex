@@ -1,0 +1,607 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usetheme{CambridgeUS}
+\usecolortheme{default} % red color scheme standard CambridgeUS
+
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{tikz}
+
+% -------------------------------------------------------
+% Title info
+% -------------------------------------------------------
+\title[FEM/BEM Coupling]{Coupled FEM/BEM:\\
+  Open-Domain Conditions in 2D Electrostatics}
+\subtitle{Computational Electromagnetics}
+\author[Matteo Morana]{Matteo Morana}
+\institute[PoliMi]{Master in Mathematical Engineering\\
+  Politecnico di Milano}
+\date{April 13, 2026}
+
+% -------------------------------------------------------
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% -------------------------------------------------------
+% \begin{frame}{Outline}
+%   \tableofcontents
+% \end{frame}
+
+% ===============================================================
+\section{Motivation}
+% ===============================================================
+
+\begin{frame}{The Problem: Parallel-Plate Capacitor in 2D}
+
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      Solve Laplace's equation in the whole plane:
+      \[
+        \Delta u = 0 \quad \text{in } \mathbb{R}^2 \setminus \{\text{plates}\}
+      \]
+      with Dirichlet conditions on the plates:
+      \[
+        u = V_1 \;\text{(top)}, \qquad u = V_2 \;\text{(bottom)}
+      \]
+
+      \bigskip
+      \textbf{Goal:} compute the electric field \emph{both inside and outside}
+      the capacitor, capturing the fringing effects at the plate edges.
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \begin{tikzpicture}[scale=1.0]
+        % Outer box
+        \draw[dashed, red, thick] (-1.8,-1.5) rectangle (1.8,1.5)
+          node[above left, red, font=\tiny] {$\Gamma$};
+        % Plates
+        \draw[very thick, blue] (-1.2, 0.4) -- (1.2, 0.4)
+          node[right, font=\tiny] {$V_1$};
+        \draw[very thick, blue] (-1.2,-0.4) -- (1.2,-0.4)
+          node[right, font=\tiny] {$V_2$};
+        % Field lines sketch
+        \foreach \x in {-0.8,-0.4,0.0,0.4,0.8}{
+          \draw[->, gray, thin] (\x, 0.4) -- (\x, -0.4);
+        }
+        % Fringing
+        \draw[->, gray, thin] (1.2, 0.3) to[out=0,in=90] (1.6, 0.0)
+          to[out=-90,in=0] (1.2,-0.3);
+        \draw[->, gray, thin] (-1.2, 0.3) to[out=180,in=90] (-1.6, 0.0)
+          to[out=-90,in=180] (-1.2,-0.3);
+        % Labels
+        \node[font=\tiny] at (0, 1.2) {$\Omega_{\text{int}}$ (FEM)};
+        \node[font=\tiny, red] at (0,-1.8) {$\Omega_{\text{ext}}$ (BEM)};
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{Why Not Pure FEM?}
+
+  \begin{block}{Pure FEM approach}
+    Truncate the domain; impose $u=0$ on the artificial boundary $\Gamma$.
+  \end{block}
+
+  \medskip
+  \textbf{Drawbacks:}
+  \begin{itemize}
+    \item Requires a \textbf{very large domain} to minimize the truncation error
+          ($\Gamma$ must be placed at $\sim 100\,L_y$ from the plates).
+    \item Leads to \textbf{huge meshes} and long computation times
+          ($\sim 56$ min for a $100\,L_y$ domain).
+    \item Cannot represent the solution \textbf{up to infinity}: introduces an
+          unavoidable approximation.
+    \item Non-uniform mesh refinement helps, but adds implementation complexity.
+  \end{itemize}
+
+  \medskip
+  \begin{alertblock}{Key idea}
+    Use \textbf{FEM} inside a small domain and \textbf{BEM} to handle the
+    exterior exactly — including infinity.
+  \end{alertblock}
+
+\end{frame}
+
+% ===============================================================
+\section{FEM Formulation}
+% ===============================================================
+
+\begin{frame}{FEM Weak Formulation}
+
+  Starting from the Laplace problem on a bounded domain $\Omega$:
+  \[
+    \Delta u = 0 \quad \Longrightarrow \quad
+    \int_\Omega \nabla u \cdot \nabla v\,dx
+    - \underbrace{\int_{\partial\Omega} \frac{\partial u}{\partial n} v\,ds}_{\text{boundary term}}
+    = 0 \qquad \forall v \in H^1(\Omega)
+  \]
+
+  \medskip
+  After discretisation with basis $\{v_i\}_{i=1}^{N_h}$, writing
+  $u \approx \sum_j u_j v_j$ and
+  $\dfrac{\partial u}{\partial n} \approx \sum_j \dfrac{\partial u_j}{\partial n} v_j$:
+
+  \[
+    \textcolor{green!60!black}{S}\,\textcolor{blue}{\mathbf{u}}
+    \;-\;
+    \textcolor{green!60!black}{T}\,\textcolor{red}{\dfrac{\partial\mathbf{u}}{\partial n}}
+    = \mathbf{0}
+  \]
+
+  where $S_{ij} = \displaystyle\int_\Omega \nabla v_i\cdot\nabla v_j\,dx$
+  and $T_{ij} = \displaystyle\int_{\partial\Omega} v_i\,v_j\,ds$.
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{Variable Count — The Key Issue}
+
+  \begin{block}{How many unknowns?}
+    The system provides $N_h$ equations. The unknowns are:
+    \begin{itemize}
+      \item $\textcolor{blue}{u_j}$, $j=1,\ldots,N_h$ \quad nodal potential values
+      \item $\textcolor{red}{\partial u_j/\partial n}$, $j=1,\ldots,N_h$ \quad
+            normal-derivative coefficients
+    \end{itemize}
+    \[
+      N_h \text{ equations} \quad \text{vs} \quad 2N_h \text{ unknowns}
+      \quad \Rightarrow \quad \text{\textbf{under-determined!}}
+    \]
+  \end{block}
+
+  \medskip
+  \textbf{Rescue: Lagrange nodal basis functions} satisfy $v_i(x_j)=\delta_{ij}$, so
+  \[
+    v_i\big|_{\partial\Omega} = 0 \quad \text{for every \emph{interior} node } i
+    \quad\Longrightarrow\quad
+    T_{ij} = 0 \text{ if } i \text{ or } j \text{ is interior.}
+  \]
+
+  \medskip
+  \begin{alertblock}{Variable reduction}
+    \begin{itemize}
+      \item Normal-derivative unknowns at \emph{interior} nodes drop out of the system.
+      \item Only the $N_h^\partial$ \textbf{boundary} coefficients
+            $\partial u_j/\partial n$ remain.
+      \item System: $N_h$ equations, $N_h + N_h^\partial$ unknowns.
+            \quad \textbf{Still} $N_h^\partial$ equations missing.
+    \end{itemize}
+  \end{alertblock}
+
+  \bigskip
+  \textbf{BEM will provide exactly the missing $N_h^\partial$ equations.}
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{FEM Block Structure}
+
+  Partitioning nodes into \textbf{interior} ($I$) and \textbf{boundary} ($B$):
+
+  \[
+    \underbrace{
+    \begin{bmatrix}
+      S_{II} & S_{IB} \\[4pt]
+      S_{BI} & S_{BB}
+    \end{bmatrix}
+    }_{\text{FEM stiffness}}
+    \begin{bmatrix} \textcolor{blue}{u_I} \\[4pt] \textcolor{blue}{u_B} \end{bmatrix}
+    -
+    \begin{bmatrix} \mathbf{0} \\[4pt] T_{BB}\,\textcolor{red}{\dfrac{\partial u_B}{\partial n}} \end{bmatrix}
+    = \mathbf{0}
+  \]
+
+  \bigskip
+  \begin{itemize}
+    \item Row $I$: closed — $\partial u/\partial n$ does not appear.
+    \item Row $B$: \textbf{open} — involves the unknown
+          $\textcolor{red}{\partial u_B/\partial n}$ (will be supplied by BEM).
+  \end{itemize}
+
+\end{frame}
+
+% ===============================================================
+\section{BEM Formulation}
+% ===============================================================
+
+\begin{frame}{BEM — Boundary Integral Equation}
+
+  \textbf{Key idea:} reformulate the Laplace problem on $\partial\Omega$ only,
+  using the fundamental solution $G(x,y) = \frac{1}{2\pi}\log|x-y|$ in 2D.
+
+  \bigskip
+  Green's third identity $\Rightarrow$ \textbf{Boundary Integral Equation} (BIE):
+  \[
+    \frac{1}{2}\,u(y) = \underbrace{\int_{\partial\Omega} G(x,y)\,
+    \frac{\partial u}{\partial n}(x)\,ds_x}_{\mathcal{V}(\partial u/\partial n)(y)}
+    \;-\;
+    \underbrace{\int_{\partial\Omega} \frac{\partial G}{\partial n_x}(x,y)\,u(x)\,ds_x}_{
+      \mathcal{K}(u)(y)}
+    \qquad \forall\, y \in \partial\Omega
+  \]
+
+  \bigskip
+  After Galerkin discretisation with boundary basis $\{\psi_j\}$:
+  \[
+    H\,\textcolor{blue}{u_B} = G\,\textcolor{red}{\dfrac{\partial u_B}{\partial n}}
+    \qquad
+    H = \tfrac{1}{2}M + K, \quad G \text{ symmetric}
+  \]
+
+  \begin{block}{}
+    BEM provides \textbf{exactly} $N_h^\partial$ equations relating $u_B$ and
+    $\partial u_B/\partial n$ — the missing relations from FEM.
+  \end{block}
+
+\end{frame}
+
+% ===============================================================
+\section{FEM-BEM Coupling}
+% ===============================================================
+
+\begin{frame}{Coupled System}
+
+  Replace the open FEM boundary rows with the BEM equations:
+
+  \[
+    \begin{bmatrix}
+      S_{II}  & S_{IB}  & 0        \\[4pt]
+      S_{BI}  & S_{BB}  & -T_{BB}  \\[4pt]
+      0       & H       & -G
+    \end{bmatrix}
+    \begin{bmatrix}
+      \textcolor{blue}{u_I} \\[4pt] \textcolor{blue}{u_B} \\[4pt]
+      \textcolor{red}{\partial u_B/\partial n}
+    \end{bmatrix}
+    =
+    \begin{bmatrix} \mathbf{0} \\ \mathbf{0} \\ \mathbf{0} \end{bmatrix}
+  \]
+
+  \medskip
+  \begin{itemize}
+    \item \textbf{Row 1 (FEM, interior):} governs $u$ inside $\Omega$.
+    \item \textbf{Row 2 (FEM, boundary):} couples $u_I$, $u_B$ with the flux.
+    \item \textbf{Row 3 (BEM):} closes the system via integral operators on $\partial\Omega$.
+  \end{itemize}
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{Elimination and Reduced System}
+
+  Assume $G$ invertible:
+  \[
+    \frac{\partial u_B}{\partial n} = -G^{-1}H\,u_B
+  \]
+
+  Substitute into the FEM boundary row $\Rightarrow$ \textbf{reduced system of size $N_h$}:
+
+  \[
+    \begin{bmatrix}
+      S_{II} & S_{IB} \\[4pt]
+      S_{BI} & S_{BB} + \underbrace{T_{BB}\,G^{-1}H}_{\text{BEM correction (dense)}}
+    \end{bmatrix}
+    \begin{bmatrix} u_I \\[4pt] u_B \end{bmatrix}
+    =
+    -\begin{bmatrix} S_{ID} \\ S_{BD} \end{bmatrix} u_D
+  \]
+
+  \begin{itemize}
+    \item Same size as a standard FEM system ($N_h \times N_h$).
+    \item The BEM term $T_{BB}G^{-1}H$ is \textbf{dense} but restricted to boundary DOFs.
+    \item In MATLAB: $G^{-1}H$ computed via the backslash operator.
+    \item After solving: recover $\partial u_B/\partial n$ and the exterior potential via
+          the BEM representation formula.
+  \end{itemize}
+
+\end{frame}
+
+% ===============================================================
+\section{Numerical Results}
+% ===============================================================
+
+\begin{frame}{Setup}
+
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \textbf{Geometry:}
+      \begin{itemize}
+        \item $L_x = 0.10$ m, $L_y = 0.01$ m ($L_x/L_y = 10$)
+        \item $V_1 = 1$ V (top), $V_2 = 0$ V (bottom)
+        \item $\Gamma$ placed at $10\,L_y$ margin on all sides
+        \item $\varepsilon_r = 1$
+      \end{itemize}
+      \textbf{Meshes:}
+      \begin{itemize}
+        \item Coarse: $\delta = 0.005$ m $\approx 500$ nodes
+        \item Fine: $\delta = 0.002$ m $\approx 2900$ nodes, $234$ nodes on $\Gamma$
+      \end{itemize}
+      \textbf{Reference:}
+      \[
+        C_{\text{ideal}} = \varepsilon_0\frac{L_x}{L_y} = 88.5 \text{ pF/m}
+      \]
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \begin{tikzpicture}[scale=0.85]
+        \draw[red, dashed, thick] (0,0) rectangle (4,3)
+          node[above left, red, font=\scriptsize]{$\Gamma$ ($10L_y$)};
+        \draw[very thick, blue] (0.8,1.65)--(3.2,1.65)
+          node[right, font=\tiny]{$V_1=1$V};
+        \draw[very thick, blue] (0.8,1.35)--(3.2,1.35)
+          node[right, font=\tiny]{$V_2=0$V};
+        \node[font=\tiny] at (2,0.3){FEM mesh $\delta$};
+        \draw[<->,gray] (3.4,1.35)--(3.4,1.65)
+          node[midway,right,font=\tiny]{$L_y$};
+        \draw[<->,gray] (0.8,2.4)--(3.2,2.4)
+          node[midway,above,font=\tiny]{$L_x$};
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{Electric Potential Distribution}
+
+  \begin{columns}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/potential_map.png}\\
+      \small Potential map ($\delta=0.002$ m)
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/potential_contour.png}\\
+      \small Equipotential lines
+    \end{column}
+  \end{columns}
+
+  \medskip
+  \begin{itemize}
+    \item Potential monotone in $[V_2, V_1]$, no oscillations near $\Gamma$.
+    \item Uniform field between plates; smooth fringing at edges.
+  \end{itemize}
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{Electric Field}
+
+  \begin{columns}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0050/margin_10/png/Efield_map_zoom.png}\\
+      \small $\delta = 0.005$ m (coarse)
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/Efield_map_zoom.png}\\
+      \small $\delta = 0.002$ m (fine)
+    \end{column}
+  \end{columns}
+
+  \medskip
+  \begin{itemize}
+    \item Central field $\approx (V_1-V_2)/L_y = 100$ V/m as expected.
+    \item Fine mesh resolves singularity at plate corners (physically expected).
+    \item Coarse mesh smears the edge singularity.
+  \end{itemize}
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{Electric Field — Element Analysis}
+
+  \begin{columns}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/Efield_bad_elements.png}\\
+      \small Elements with $|\mathbf{E}|>105$ V/m
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/Efield_histogram.png}\\
+      \small Distribution of $|\mathbf{E}|$ per element
+    \end{column}
+  \end{columns}
+
+  \medskip
+  \begin{itemize}
+    \item Anomalous elements localised at plate \textbf{corners} only.
+    \item This is a well-known physical singularity of infinitely thin conductors
+          — \textbf{not} a numerical artefact.
+    \item The majority of elements have $|\mathbf{E}| \approx 100$ V/m.
+  \end{itemize}
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{Flux Through $\Gamma$ (Gauss's Law Check)}
+
+  \begin{columns}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/q_gamma.png}\\
+      \small $\partial u/\partial n$ on $\Gamma$
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Physical expectation:}
+      \begin{itemize}
+        \item Field lines between plates do \emph{not} cross $\Gamma$.
+        \item Only fringing fields exit through $\Gamma$.
+        \item Net flux must vanish (equal and opposite plate charges).
+      \end{itemize}
+      \[
+        \oint_\Gamma \frac{\partial u}{\partial n}\,ds \approx -5.47\times10^{-13}
+      \]
+      \vspace{-0.5em}
+      Numerically consistent with zero — coupling condition verified.
+    \end{column}
+  \end{columns}
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{Surface Charge Density and Capacitance}
+
+  \begin{columns}
+    \begin{column}{0.44\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/charge_density.png}\\
+      \small Surface charge density on the plates
+    \end{column}
+    \begin{column}{0.53\textwidth}
+      \small
+      \begin{tabular}{lcc}
+        \toprule
+        Method & $C$ (F/m) & Error \\
+        \midrule
+        Ideal analytical & $8.85\times10^{-11}$ & --- \\
+        Charge method & $8.85\times10^{-11}$ & $0.00\%$ \\
+        Energy (gap only) & $8.85\times10^{-11}$ & $0.00\%$ \\
+        Energy (full $\Omega$) & $1.0668\times10^{-10}$ & $20.54\%$ \\
+        \bottomrule
+      \end{tabular}
+
+      \medskip
+      \begin{itemize}
+        \item Charge distribution uniform in central region; higher near edges (fringing).
+        \item 20.5\% excess from energy method = \textbf{fringing field contribution}
+              (expected for $L_x/L_y=10$).
+        \item FEM-BEM vs.\ reference FEM: \textbf{0.69\%} relative error.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{Capacitance different Ly, fixed Lx}
+
+  \begin{columns}
+    \begin{column}{0.44\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0050/margin_10/comparison_capacitance.png}\\
+      \small Capacitance with different Ly
+    \end{column}
+    \begin{column}{0.53\textwidth}
+      \small
+
+      \medskip
+      \begin{itemize}
+        \item \textbf{Method comparison:} internal energy method inside the capacitor shows excellent agreement; charge-based method slightly overestimates
+        \item \textbf{Full domain energy:} increasing deviation from theory due to energy stored outside the capacitor
+      \end{itemize}
+    \end{column}
+  \end{columns}
+
+\end{frame}
+
+% ===============================================================
+\section{Comparison with Pure FEM}
+% ===============================================================
+
+\begin{frame}{FEM-BEM vs.\ Pure FEM — Accuracy}
+
+  \begin{columns}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/FEM_10_BEM_10.png}\\
+      \small Pure FEM ($100\,L_y$ domain) — reference solution
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/u_err_FEM_100_BEM_10.png}\\
+      \small Pointwise difference: FEM vs.\ FEM-BEM on common domain
+    \end{column}
+  \end{columns}
+
+  \medskip
+  \[
+    \varepsilon_{L^2} =
+    \sqrt{\frac{\sum_{i\in\mathcal{N}_c}(u_i^{\text{FEM}}-u_i^{\text{FEM-BEM}})^2}
+               {\sum_{i\in\mathcal{N}_c}(u_i^{\text{FEM}})^2}}
+    \times 100\% \;=\; \mathbf{5.84\%}
+  \]
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{FEM-BEM vs.\ Pure FEM — Accuracy \& Speed}
+
+  \begin{columns}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/L2_norm.png}\\
+      \small $L^2$ error vs.\ FEM domain size
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/time.png}\\
+      \small Computational time comparison
+    \end{column}
+  \end{columns}
+
+  \medskip
+  \begin{block}{Efficiency gain}
+    \begin{itemize}
+      \item FEM-BEM ($10\,L_y$ domain): \textbf{27.6 s}
+      \item Pure FEM ($100\,L_y$ domain): \textbf{3363 s} ($\approx 56$ min)
+      \item \textbf{Speed-up: $\sim$100$\times$} with comparable accuracy.
+    \end{itemize}
+  \end{block}
+
+\end{frame}
+
+% ===============================================================
+\section{Conclusions \& Future Work}
+% ===============================================================
+
+\begin{frame}{Conclusions}
+
+  \begin{itemize}
+    \item A \textbf{FEM-BEM coupled solver} for 2D electrostatics has been implemented
+          in MATLAB, targeting the parallel-plate capacitor problem.
+
+    \item The coupling exploits:
+      \begin{enumerate}
+        \item FEM's accuracy in the bounded interior region.
+        \item BEM's ability to represent the exterior field \textbf{up to infinity}.
+      \end{enumerate}
+
+    \item Validation confirms:
+      \begin{itemize}
+        \item Correct potential and field distributions.
+        \item Capacitance within 0.69\% of the reference FEM solution.
+        \item Gauss's law satisfied numerically.
+      \end{itemize}
+
+    \item \textbf{100$\times$ speed-up} over a comparable pure FEM simulation.
+  \end{itemize}
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{Future Work}
+
+  \begin{itemize}
+    \item \textbf{Non-uniform mesh refinement} near plate edges to better resolve
+          the fringing singularity.
+    \item \textbf{Higher-order finite elements} for improved accuracy.
+    \item Re-implementation in \textbf{C++} for significantly reduced execution times.
+    \item Extension to \textbf{non-symmetric geometries} and
+          \textbf{3D configurations} for practical engineering applications.
+    \item Full code available on GitHub:\\
+          \texttt{github.com/Michelino21/FemBem\_Project}
+  \end{itemize}
+
+\end{frame}
+
+\end{document}

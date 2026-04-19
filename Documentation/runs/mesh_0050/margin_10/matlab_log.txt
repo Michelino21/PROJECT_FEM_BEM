@@ -1,0 +1,110 @@
+
+--- GEOMETRIC PARAMETERS ---
+Lx               : 0.1000 m
+Ly               : 0.0100 m
+delx             : 0.0050 m
+dely             : 0.0050 m
+
+--- DOMAIN DIMENSIONS ---
+margin_BEM_coeff : 10
+margin           : 0.1000 m
+X_mesh           : 0.3000 m
+Y_mesh           : 0.2100 m
+
+--- PHYSICAL PARAMETERS ---
+e0               : 8.8500e-12 F/m
+er               : 1.0000
+V1               : 0.5000 V
+V2               : -0.5000 V
+
+--- MESH ---
+Time of mesh generation: 0.0132 s
+Mesh Dimension: 2623
+Connectivity Dimension: 5040
+
+--- NODES ---
+Nodes on the plates: 42
+Nodes on the boundary: 204
+Other Nodes: 2377
+
+--- ASSEMBLE S ---
+Time of assemble S: 0.3474 s
+Element in S (sparse): 12907
+Sparsity Percentage: 0.1876
+
+--- ASSEMBLE T ---
+Time of assemble T: 0.0117 s
+Element in T (sparse): 612
+Sparsity Percentage: 1.471
+
+--- ASSEMBLE G H ---
+Time of assemble G and H: 4.5469 s
+Element in G: 41616
+Sparsity Percentage: 100.0000
+cond(G_bem) = 457.8
+Lower Eigenvalue of G -0.3108
+
+Element in H: 41616
+Sparsity Percentage: 100.0000
+cond(H_bem) = 1.369e+16
+Diagonal values of H: -0.5000  -0.2500
+
+--- COUPLED SYSTEM ---
+Time of solve BEM Matrix: 0.0007 s
+cond(BEM_matrix) = 5.136e+16
+cond(T_BB * BEM_matrix) = 1.853e+16
+
+Number of elements of K: [2581 x 2581]
+Element of matrix K 6661561
+Element in K (semi-sparse): 53613
+Sparsity Percentage: 0.8048
+
+Element RHS: 2581
+Sparsity Percentage: 1.782
+
+--- SOLVE COUPLED SYSYEM ---
+Time of solve COUPLED SYSTEM: 0.0060 s
+Time FEM-BEM method (except Mesh Generation): 4.9126 s
+
+
+
+
+==========================================
+            POST-PROCESSING               
+==========================================
+
+------- E Field -------
+Theoretical E           = 100.0000 V/m
+Threshold Factor        = 5.0000 %
+Threshold E             = 105.0000 V/m
+Elements with E > thr   : 0
+Elements with E <= thr  : 80
+
+Flux of E on Gamma: 0.0000 V/m
+
+------- CHARGE on PLATES -------
+Total charge upper plate  (Q_top)   : 8.850000e-11 C/m
+Total charge lower plate  (Q_bottom): -8.850000e-11 C/m
+Sum (Q_tot)               : 1.292470e-26 C/m
+Ratio Q_top/Q_bot         : -1.000000e+00
+
+Average charge density upper plate: 8.733366e-10 C/m^2
+Average charge density lower plate: -8.733366e-10 C/m^2
+
+------- CAPACITANCE -------
+Capacitance (from upper plate)          : 8.850000e-11 F/m
+Capacitance (from lower plate)          : 8.850000e-11 F/m
+Average capacitance                     : 8.850000e-11 F/m
+Theoretical capacitance (infinite plate): 8.850000e-11 F/m
+Relative error                          : 0.0000%
+
+Lx : 0.100000 m
+Ly = 0.010000 m
+Q_{top}    : +8.850000e-11 C/m
+Q_{bottom} : -8.850000e-11 C/m
+Q_{sum}    : +1.292470e-26 C/m
+ΔV         : 1.000000 V
+
+
+
+END OF LOG
