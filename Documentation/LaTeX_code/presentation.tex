@@ -19,7 +19,7 @@
 \author[Matteo Morana]{Matteo Morana}
 \institute[PoliMi]{Master in Mathematical Engineering\\
   Politecnico di Milano}
-\date{April 13, 2026}
+\date{April 21, 2026}
 
 % -------------------------------------------------------
 \begin{document}
@@ -47,7 +47,7 @@
       \]
       with Dirichlet conditions on the plates:
       \[
-        u = V_1 \;\text{(top)}, \qquad u = V_2 \;\text{(bottom)}
+        u = +V \;\text{(top)}, \qquad u = -V \;\text{(bottom)}
       \]
 
       \bigskip
@@ -61,9 +61,9 @@
           node[above left, red, font=\tiny] {$\Gamma$};
         % Plates
         \draw[very thick, blue] (-1.2, 0.4) -- (1.2, 0.4)
-          node[right, font=\tiny] {$V_1$};
+          node[right, font=\tiny] {$+V$};
         \draw[very thick, blue] (-1.2,-0.4) -- (1.2,-0.4)
-          node[right, font=\tiny] {$V_2$};
+          node[right, font=\tiny] {$-V$};
         % Field lines sketch
         \foreach \x in {-0.8,-0.4,0.0,0.4,0.8}{
           \draw[->, gray, thin] (\x, 0.4) -- (\x, -0.4);
@@ -94,11 +94,9 @@
   \begin{itemize}
     \item Requires a \textbf{very large domain} to minimize the truncation error
           ($\Gamma$ must be placed at $\sim 100\,L_y$ from the plates).
-    \item Leads to \textbf{huge meshes} and long computation times
-          ($\sim 56$ min for a $100\,L_y$ domain).
+    \item Leads to \textbf{large meshes} and long computation times.
     \item Cannot represent the solution \textbf{up to infinity}: introduces an
           unavoidable approximation.
-    \item Non-uniform mesh refinement helps, but adds implementation complexity.
   \end{itemize}
 
   \medskip
@@ -168,16 +166,10 @@
   \begin{alertblock}{Variable reduction}
     \begin{itemize}
       \item Normal-derivative unknowns at \emph{interior} nodes drop out of the system.
-      \item Only the $N_h^\partial$ \textbf{boundary} coefficients
-            $\partial u_j/\partial n$ remain.
       \item System: $N_h$ equations, $N_h + N_h^\partial$ unknowns.
-            \quad \textbf{Still} $N_h^\partial$ equations missing.
+            Here BEM provide $N_h^\partial$ equations.
     \end{itemize}
   \end{alertblock}
-
-  \bigskip
-  \textbf{BEM will provide exactly the missing $N_h^\partial$ equations.}
-
 \end{frame}
 
 % -------------------------------------------------------
@@ -228,7 +220,7 @@
   \]
 
   \bigskip
-  After Galerkin discretisation with boundary basis $\{\psi_j\}$:
+  After collocation discretizations with boundary basis $\{\psi_j\}$:
   \[
     H\,\textcolor{blue}{u_B} = G\,\textcolor{red}{\dfrac{\partial u_B}{\partial n}}
     \qquad
@@ -304,7 +296,7 @@
 \end{frame}
 
 % ===============================================================
-\section{Numerical Results}
+\section{Comparison with Pure FEM}
 % ===============================================================
 
 \begin{frame}{Setup}
@@ -313,8 +305,8 @@
     \begin{column}{0.55\textwidth}
       \textbf{Geometry:}
       \begin{itemize}
-        \item $L_x = 0.10$ m, $L_y = 0.01$ m ($L_x/L_y = 10$)
-        \item $V_1 = 1$ V (top), $V_2 = 0$ V (bottom)
+        \item $L_x = 0.10$ m, $L_y = 0.10$ m ($L_x/L_y = 1$)
+        \item $V_1 = 0.5$ V (top), $V_2 = -0.5$ V (bottom)
         \item $\Gamma$ placed at $10\,L_y$ margin on all sides
         \item $\varepsilon_r = 1$
       \end{itemize}
@@ -323,189 +315,47 @@
         \item Coarse: $\delta = 0.005$ m $\approx 500$ nodes
         \item Fine: $\delta = 0.002$ m $\approx 2900$ nodes, $234$ nodes on $\Gamma$
       \end{itemize}
-      \textbf{Reference:}
+      \textbf{Reference:} 
+      \paragraph{The reference is a pure FEM method with a Dirichlet condition imposed on $\Gamma$ placed at $100L_y$}
       \[
-        C_{\text{ideal}} = \varepsilon_0\frac{L_x}{L_y} = 88.5 \text{ pF/m}
+        C_{\text{pure\_FEM}} = ??? \text{ pF/m}
       \]
     \end{column}
     \begin{column}{0.42\textwidth}
-      \begin{tikzpicture}[scale=0.85]
-        \draw[red, dashed, thick] (0,0) rectangle (4,3)
-          node[above left, red, font=\scriptsize]{$\Gamma$ ($10L_y$)};
-        \draw[very thick, blue] (0.8,1.65)--(3.2,1.65)
-          node[right, font=\tiny]{$V_1=1$V};
-        \draw[very thick, blue] (0.8,1.35)--(3.2,1.35)
-          node[right, font=\tiny]{$V_2=0$V};
-        \node[font=\tiny] at (2,0.3){FEM mesh $\delta$};
-        \draw[<->,gray] (3.4,1.35)--(3.4,1.65)
-          node[midway,right,font=\tiny]{$L_y$};
-        \draw[<->,gray] (0.8,2.4)--(3.2,2.4)
-          node[midway,above,font=\tiny]{$L_x$};
-      \end{tikzpicture}
+        \centering
+       
+          \begin{tikzpicture}[scale=0.85]
+            % Dominio (lasciato grande)
+            \draw[red, dashed, thick] (0,0) rectangle (4,3)
+              node[above left, red, font=\scriptsize]{$\Gamma$};
+        
+            % Piastre (stessa lunghezza e distanza coerente)
+            \draw[very thick, blue] (1,1.75)--(3,1.75)
+              node[right, font=\tiny]{$V_1=+0.5$V};
+            \draw[very thick, blue] (1,1.25)--(3,1.25)
+              node[right, font=\tiny]{$V_2=-0.5$V};
+        
+            % Indicatore Lx (lunghezza piastra)
+            \draw[<->,gray] (1,2.2)--(3,2.2)
+              node[midway,above,font=\tiny]{$L_x$};
+        
+            % Indicatore Ly (distanza tra piastre / altezza caratteristica)
+            \draw[<->,gray] (0.65,1.25)--(0.65,1.75)
+              node[midway,right,font=\tiny]{$L_y$};
+        
+            % Mesh label
+            \node[font=\tiny] at (2,0.3){FEM mesh};
+        
+          \end{tikzpicture}
+
+           \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/FEM_10.png}\\
+        \small Mesh Rapresentation
     \end{column}
+    
   \end{columns}
 
 \end{frame}
 
-% -------------------------------------------------------
-\begin{frame}{Electric Potential Distribution}
-
-  \begin{columns}
-    \begin{column}{0.48\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/potential_map.png}\\
-      \small Potential map ($\delta=0.002$ m)
-    \end{column}
-    \begin{column}{0.48\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/potential_contour.png}\\
-      \small Equipotential lines
-    \end{column}
-  \end{columns}
-
-  \medskip
-  \begin{itemize}
-    \item Potential monotone in $[V_2, V_1]$, no oscillations near $\Gamma$.
-    \item Uniform field between plates; smooth fringing at edges.
-  \end{itemize}
-
-\end{frame}
-
-% -------------------------------------------------------
-\begin{frame}{Electric Field}
-
-  \begin{columns}
-    \begin{column}{0.48\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0050/margin_10/png/Efield_map_zoom.png}\\
-      \small $\delta = 0.005$ m (coarse)
-    \end{column}
-    \begin{column}{0.48\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/Efield_map_zoom.png}\\
-      \small $\delta = 0.002$ m (fine)
-    \end{column}
-  \end{columns}
-
-  \medskip
-  \begin{itemize}
-    \item Central field $\approx (V_1-V_2)/L_y = 100$ V/m as expected.
-    \item Fine mesh resolves singularity at plate corners (physically expected).
-    \item Coarse mesh smears the edge singularity.
-  \end{itemize}
-
-\end{frame}
-
-% -------------------------------------------------------
-\begin{frame}{Electric Field — Element Analysis}
-
-  \begin{columns}
-    \begin{column}{0.48\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/Efield_bad_elements.png}\\
-      \small Elements with $|\mathbf{E}|>105$ V/m
-    \end{column}
-    \begin{column}{0.48\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/Efield_histogram.png}\\
-      \small Distribution of $|\mathbf{E}|$ per element
-    \end{column}
-  \end{columns}
-
-  \medskip
-  \begin{itemize}
-    \item Anomalous elements localised at plate \textbf{corners} only.
-    \item This is a well-known physical singularity of infinitely thin conductors
-          — \textbf{not} a numerical artefact.
-    \item The majority of elements have $|\mathbf{E}| \approx 100$ V/m.
-  \end{itemize}
-
-\end{frame}
-
-% -------------------------------------------------------
-\begin{frame}{Flux Through $\Gamma$ (Gauss's Law Check)}
-
-  \begin{columns}
-    \begin{column}{0.48\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/q_gamma.png}\\
-      \small $\partial u/\partial n$ on $\Gamma$
-    \end{column}
-    \begin{column}{0.48\textwidth}
-      \textbf{Physical expectation:}
-      \begin{itemize}
-        \item Field lines between plates do \emph{not} cross $\Gamma$.
-        \item Only fringing fields exit through $\Gamma$.
-        \item Net flux must vanish (equal and opposite plate charges).
-      \end{itemize}
-      \[
-        \oint_\Gamma \frac{\partial u}{\partial n}\,ds \approx -5.47\times10^{-13}
-      \]
-      \vspace{-0.5em}
-      Numerically consistent with zero — coupling condition verified.
-    \end{column}
-  \end{columns}
-
-\end{frame}
-
-% -------------------------------------------------------
-\begin{frame}{Surface Charge Density and Capacitance}
-
-  \begin{columns}
-    \begin{column}{0.44\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/charge_density.png}\\
-      \small Surface charge density on the plates
-    \end{column}
-    \begin{column}{0.53\textwidth}
-      \small
-      \begin{tabular}{lcc}
-        \toprule
-        Method & $C$ (F/m) & Error \\
-        \midrule
-        Ideal analytical & $8.85\times10^{-11}$ & --- \\
-        Charge method & $8.85\times10^{-11}$ & $0.00\%$ \\
-        Energy (gap only) & $8.85\times10^{-11}$ & $0.00\%$ \\
-        Energy (full $\Omega$) & $1.0668\times10^{-10}$ & $20.54\%$ \\
-        \bottomrule
-      \end{tabular}
-
-      \medskip
-      \begin{itemize}
-        \item Charge distribution uniform in central region; higher near edges (fringing).
-        \item 20.5\% excess from energy method = \textbf{fringing field contribution}
-              (expected for $L_x/L_y=10$).
-        \item FEM-BEM vs.\ reference FEM: \textbf{0.69\%} relative error.
-      \end{itemize}
-    \end{column}
-  \end{columns}
-
-\end{frame}
-
-% -------------------------------------------------------
-\begin{frame}{Capacitance different Ly, fixed Lx}
-
-  \begin{columns}
-    \begin{column}{0.44\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0050/margin_10/comparison_capacitance.png}\\
-      \small Capacitance with different Ly
-    \end{column}
-    \begin{column}{0.53\textwidth}
-      \small
-
-      \medskip
-      \begin{itemize}
-        \item \textbf{Method comparison:} internal energy method inside the capacitor shows excellent agreement; charge-based method slightly overestimates
-        \item \textbf{Full domain energy:} increasing deviation from theory due to energy stored outside the capacitor
-      \end{itemize}
-    \end{column}
-  \end{columns}
-
-\end{frame}
-
-% ===============================================================
-\section{Comparison with Pure FEM}
 % ===============================================================
 
 \begin{frame}{FEM-BEM vs.\ Pure FEM — Accuracy}
@@ -550,17 +400,161 @@
   \end{columns}
 
   \medskip
-  \begin{block}{Efficiency gain}
+  \begin{block}{Efficiency gain \textit{on my computer}}
     \begin{itemize}
       \item FEM-BEM ($10\,L_y$ domain): \textbf{27.6 s}
       \item Pure FEM ($100\,L_y$ domain): \textbf{3363 s} ($\approx 56$ min)
-      \item \textbf{Speed-up: $\sim$100$\times$} with comparable accuracy.
     \end{itemize}
   \end{block}
 
 \end{frame}
 
 % ===============================================================
+
+\section{Numerical Results - FEM-BEM}
+% ===============================================================
+
+
+
+% -------------------------------------------------------
+\begin{frame}{Electric Potential Distribution FEM-BEM}
+
+  \begin{columns}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/potential_map.png}\\
+      \small Potential map ($\delta=0.002$ m)
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/potential_contour.png}\\
+      \small Equipotential lines
+    \end{column}
+  \end{columns}
+
+  \medskip
+  \begin{itemize}
+    \item Uniform field between plates; smooth fringing at edges.
+  \end{itemize}
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{Electric Field FEM-BEM}
+
+  \begin{columns}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0050/margin_10/png/Efield_map_zoom.png}\\
+      \small $\delta = 0.005$ m (coarse)
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/Efield_map_zoom.png}\\
+      \small $\delta = 0.002$ m (fine)
+    \end{column}
+  \end{columns}
+
+  \medskip
+  \begin{itemize}
+    \item Central field $\approx (V_1-V_2)/L_y = 100$ V/m as expected.
+    \item Fine mesh resolves singularity at plate corners (physically expected).
+    \item Coarse mesh smears the edge singularity.
+  \end{itemize}
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{Electric Field — Element Analysis (FEM-BEM)}
+
+  \begin{columns}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/Efield_bad_elements.png}\\
+      \small Elements with $|\mathbf{E}|>105$ V/m
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/Efield_histogram.png}\\
+      \small Distribution of $|\mathbf{E}|$ per element
+    \end{column}
+  \end{columns}
+
+  \medskip
+  \begin{itemize}
+    \item Anomalous elements localised at plate \textbf{corners} only.
+    \item This is a well-known physical singularity of infinitely thin conductors
+          — \textbf{not} a numerical artefact.
+    \item The majority of elements have $|\mathbf{E}| \approx 100$ V/m.
+  \end{itemize}
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{Flux Through $\Gamma$ (FEM-BEM)}
+
+  \begin{columns}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/q_gamma.png}\\
+      \small $\partial u/\partial n$ on $\Gamma$
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Physical expectation:}
+      \begin{itemize}
+        \item Net flux must vanish (equal and opposite plate charges).
+      \end{itemize}
+      \[
+        Q_{tot} =\oint_\Gamma \frac{\partial u}{\partial n}\,ds \approx -5.47\times10^{-13} \approx 0
+      \]
+      \vspace{-0.5em}
+      Numerically consistent with zero — coupling condition verified.
+    \end{column}
+  \end{columns}
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{Surface Charge Density and Capacitance}
+
+  \begin{columns}
+    \begin{column}{0.44\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/charge_density.png}\\
+      \small Surface charge density on the plates
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      ... come calcolare capacità, solo con carica ...
+    \end{column}
+    
+  \end{columns}
+
+\end{frame}
+
+% -------------------------------------------------------
+\begin{frame}{Capacitance different Ly, fixed Lx}
+
+  \begin{columns}
+    \begin{column}{0.44\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0050/margin_10/comparison_capacitance.png}\\
+      \small Capacitance with different Ly
+    \end{column}
+    \begin{column}{0.53\textwidth}
+      \small
+
+      \medskip
+      \begin{itemize}
+        \item \textbf{Method comparison:} internal energy method inside the capacitor shows excellent agreement; charge-based method slightly overestimates
+        \item \textbf{Full domain energy:} increasing deviation from theory due to energy stored outside the capacitor
+      \end{itemize}
+    \end{column}
+  \end{columns}
+
+\end{frame}
+
+% ===============================================================
+
 \section{Conclusions \& Future Work}
 % ===============================================================
 
@@ -584,22 +578,6 @@
       \end{itemize}
 
     \item \textbf{100$\times$ speed-up} over a comparable pure FEM simulation.
-  \end{itemize}
-
-\end{frame}
-
-% -------------------------------------------------------
-\begin{frame}{Future Work}
-
-  \begin{itemize}
-    \item \textbf{Non-uniform mesh refinement} near plate edges to better resolve
-          the fringing singularity.
-    \item \textbf{Higher-order finite elements} for improved accuracy.
-    \item Re-implementation in \textbf{C++} for significantly reduced execution times.
-    \item Extension to \textbf{non-symmetric geometries} and
-          \textbf{3D configurations} for practical engineering applications.
-    \item Full code available on GitHub:\\
-          \texttt{github.com/Michelino21/FemBem\_Project}
   \end{itemize}
 
 \end{frame}
