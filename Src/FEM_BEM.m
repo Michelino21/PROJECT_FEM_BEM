@@ -31,7 +31,7 @@ function FEM_BEM(params)
         mesh_str = sprintf('%04d', mesh_int);
         
         % Costruisce il path della cartella con mesh e margine
-        folder_name = sprintf('../Documentation/runs/mesh_%s/margin_%d', mesh_str, params.margin_BEM_coeff);
+        folder_name = sprintf('./Documentation/runs/mesh_%s/margin_%d', mesh_str, params.margin_BEM_coeff);
         
         folder_png  = fullfile(folder_name, 'png');
         folder_fig  = fullfile(folder_name, 'fig');
