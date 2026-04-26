@@ -149,11 +149,28 @@ Relative error inside capacitor         : 1.772%
 Relative error inside capacitor         : 25.74%
 Relative error all FEM-BEM vs FEM       : 1.306%
 
+ 
+--- iteration: 3 , margin: 50 * Ly---
+Real Margin: 2.5000 m
+X_mesh           : 5.0500 m
+Y_mesh           : 5.0500 m
+
+------- CAPACITANCE ENERGY METHOD -------
+Capacitance in all the BEM domain       : 1.94915e-11 F/m
+Capacitance inside the capacitor        : 9.00667e-12 F/m
+Capacitance inside the capacitor clean  : 6.57262e-12 F/m
+Theoretical capacitance (infinite plate): 8.85e-12 F/m
+Relative error all BEM                  : 120.2%
+Relative error inside capacitor         : 1.77%
+Relative error inside capacitor         : 25.73%
+Relative error all FEM-BEM vs FEM       : 1.247%
+
 Margin/Ly       N nodes    err_L2 (%)   err_C_all    time (s)  
 ---------       -------    ------       ------       --------  
-3               5041       45.76        1.998e-11    0.175     
-20              168921     3.965        1.95e-11     79.9      
-FEM-BEM(ref)    5041       --           1.925e-11    8.421     
+3               5041       45.76        1.998e-11    0.166   
+20              168921     3.965        1.95e-11     79.9     
+50              1022121    3.444        1.949e-11    2.8e+03   
+FEM-BEM(ref)    5041       --           1.925e-11    8.522    
 
 
 
