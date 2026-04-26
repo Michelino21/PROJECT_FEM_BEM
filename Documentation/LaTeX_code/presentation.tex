@@ -94,7 +94,7 @@
   \textbf{Drawbacks:}
   \begin{itemize}
     \item Requires a \textbf{very large domain} to minimize the truncation error
-          ($\Gamma$ must be placed at $\sim 100\,L_y$ from the plates).
+          ($\Gamma$ must be placed at $\sim 50\,L_y$ from the plates).
     \item Leads to \textbf{large meshes} and long computation times.
     \item Cannot represent the solution \textbf{up to infinity}: introduces an
           unavoidable approximation.
@@ -316,7 +316,7 @@
         \item Coarse: $\delta = 0.005$ m $\approx 5000$ nodes
       \end{itemize}
       \textbf{Reference:} 
-      \paragraph{The reference is a pure FEM method with a Dirichlet condition imposed on $\Gamma$ placed at $20L_y$}
+      \paragraph{The reference is a pure FEM method with a Dirichlet condition imposed on $\Gamma$ placed at $50L_y$}
     \end{column}
     \begin{column}{0.42\textwidth}
     \centering
@@ -364,7 +364,7 @@
   \begin{columns}
     \begin{column}{0.48\textwidth}
       \centering
-      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0050/margin_3/png/FEM_50_BEM_3.png}\\
+      \includegraphics[width=0.6\linewidth]{Documentation/runs/mesh_0050/margin_3/png/FEM_50_BEM_3.png}\\
       \small Pure FEM ($20\,L_y$ domain) — reference solution
     \end{column}
     \begin{column}{0.48\textwidth}
@@ -451,7 +451,7 @@
     \end{column}
     \begin{column}{0.48\textwidth}
       \begin{itemize}
-    \item Central field $\approx (V_1-V_2)/L_y = 100$ V/m as expected.
+    \item Central field $\approx (V_1-V_2)/L_y = 20$ V/m as expected.
     \item Fine mesh resolves singularity at plate corners (physically expected).
     \item Coarse mesh smears the edge singularity.
   \end{itemize}
@@ -467,12 +467,12 @@
   \begin{columns}
     \begin{column}{0.48\textwidth}
       \centering
-      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/Efield_bad_elements.png}\\
-      \small Elements with $|\mathbf{E}|>105$ V/m
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0050/margin_3/png/Efield_bad_elements.png}\\
+      \small Elements with $|\mathbf{E}|>21$ V/m
     \end{column}
     \begin{column}{0.48\textwidth}
       \centering
-      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/Efield_histogram.png}\\
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0050/margin_3/png/Efield_histogram.png}\\
       \small Distribution of $|\mathbf{E}|$ per element
     \end{column}
   \end{columns}
@@ -482,7 +482,7 @@
     \item Anomalous elements localised at plate \textbf{corners} only.
     \item This is a well-known physical singularity of infinitely thin conductors
           — \textbf{not} a numerical artefact.
-    \item The majority of elements have $|\mathbf{E}| \approx 100$ V/m.
+    \item The majority of elements have $|\mathbf{E}| \approx 20$ V/m.
   \end{itemize}
 
 \end{frame}
@@ -493,7 +493,7 @@
   \begin{columns}
     \begin{column}{0.48\textwidth}
       \centering
-      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/q_gamma.png}\\
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0050/margin_3/png/q_gamma.png}\\
       \small $\partial u/\partial n$ on $\Gamma$
     \end{column}
     \begin{column}{0.48\textwidth}
@@ -502,7 +502,7 @@
         \item Net flux must vanish (equal and opposite plate charges).
       \end{itemize}
       \[
-        Q_{tot} =\oint_\Gamma \frac{\partial u}{\partial n}\,ds \approx -5.47\times10^{-13} \approx 0
+        Q_{tot} =\oint_\Gamma \frac{\partial u}{\partial n}\,ds \approx -1.79\times10^{-13} \approx 0
       \]
       \vspace{-0.5em}
       Numerically consistent with zero — coupling condition verified.
@@ -517,7 +517,7 @@
   \begin{columns}
     \begin{column}{0.50\textwidth}
       \centering
-      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/charge_density.png}\\
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0050/margin_3/png/charge_density.png}\\
       \small Surface charge density on the plates
     \end{column}
     \begin{column}{0.35\textwidth}
