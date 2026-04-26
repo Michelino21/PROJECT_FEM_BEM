@@ -19,7 +19,7 @@
 \author[Matteo Morana]{Matteo Morana}
 \institute[PoliMi]{Master in Mathematical Engineering\\
   Politecnico di Milano}
-\date{April 21, 2026}
+\date{April 28, 2026}
 
 % -------------------------------------------------------
 \begin{document}
@@ -51,10 +51,11 @@
       \]
 
       \bigskip
-      \textbf{Goal:} compute the electric field \emph{both inside and outside}
-      the capacitor, capturing the fringing effects at the plate edges.
+      \textbf{Goal:} compute the electric potential \emph{both inside and outside}
+      the capacitor in a real case scenario.
     \end{column}
     \begin{column}{0.42\textwidth}
+      \centering
       \begin{tikzpicture}[scale=1.0]
         % Outer box
         \draw[dashed, red, thick] (-1.8,-1.5) rectangle (1.8,1.5)
@@ -238,7 +239,7 @@
 \section{FEM-BEM Coupling}
 % ===============================================================
 
-\begin{frame}{Coupled System}
+\begin{frame}{Coupled System and Plates Conditions}
 
   Replace the open FEM boundary rows with the BEM equations:
 
@@ -317,48 +318,49 @@
       \end{itemize}
       \textbf{Reference:} 
       \paragraph{The reference is a pure FEM method with a Dirichlet condition imposed on $\Gamma$ placed at $100L_y$}
-      \[
-        C_{\text{pure\_FEM}} = ??? \text{ pF/m}
-      \]
     \end{column}
     \begin{column}{0.42\textwidth}
-        \centering
-       
-          \begin{tikzpicture}[scale=0.85]
-            % Dominio (lasciato grande)
-            \draw[red, dashed, thick] (0,0) rectangle (4,3)
-              node[above left, red, font=\scriptsize]{$\Gamma$};
-        
-            % Piastre (stessa lunghezza e distanza coerente)
-            \draw[very thick, blue] (1,1.75)--(3,1.75)
-              node[right, font=\tiny]{$V_1=+0.5$V};
-            \draw[very thick, blue] (1,1.25)--(3,1.25)
-              node[right, font=\tiny]{$V_2=-0.5$V};
-        
-            % Indicatore Lx (lunghezza piastra)
-            \draw[<->,gray] (1,2.2)--(3,2.2)
-              node[midway,above,font=\tiny]{$L_x$};
-        
-            % Indicatore Ly (distanza tra piastre / altezza caratteristica)
-            \draw[<->,gray] (0.65,1.25)--(0.65,1.75)
-              node[midway,right,font=\tiny]{$L_y$};
-        
-            % Mesh label
-            \node[font=\tiny] at (2,0.3){FEM mesh};
-        
-          \end{tikzpicture}
-
-           \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/FEM_10.png}\\
-        \small Mesh Rapresentation
-    \end{column}
+    \centering
+    \vfill
     
-  \end{columns}
-
+    \resizebox{0.85\linewidth}{!}{%
+      \begin{tikzpicture}[scale=0.85]
+        % Dominio
+        \draw[red, dashed, thick] (0,0) rectangle (4,3)
+          node[above left, red, font=\scriptsize]{$\Gamma$};
+    
+        % Piastre
+        \draw[very thick, blue] (1,1.75)--(3,1.75)
+          node[right, font=\tiny]{$V_1=+0.5$V};
+        \draw[very thick, blue] (1,1.25)--(3,1.25)
+          node[right, font=\tiny]{$V_2=-0.5$V};
+    
+        % Indicatore Lx
+        \draw[<->,gray] (1,2.2)--(3,2.2)
+          node[midway,above,font=\tiny]{$L_x$};
+    
+        % Indicatore Ly
+        \draw[<->,gray] (0.65,1.25)--(0.65,1.75)
+          node[midway,right,font=\tiny]{$L_y$};
+    
+        % Mesh label
+        \node[font=\tiny] at (2,0.3){FEM mesh};
+      \end{tikzpicture}
+    }%
+    
+    \medskip
+    
+    \includegraphics[width=0.85\linewidth, height=6cm, keepaspectratio=true]{Documentation/runs/mesh.png}
+    
+    \vfill
+    \small Mesh Representation
+\end{column}
+    \end{columns}
 \end{frame}
 
 % ===============================================================
-
-\begin{frame}{FEM-BEM vs.\ Pure FEM — Accuracy}
+    
+\begin{frame}{FEM-BEM vs.\ Pure FEM}
 
   \begin{columns}
     \begin{column}{0.48\textwidth}
@@ -518,13 +520,18 @@
 \begin{frame}{Surface Charge Density and Capacitance}
 
   \begin{columns}
-    \begin{column}{0.44\textwidth}
+    \begin{column}{0.50\textwidth}
       \centering
       \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/charge_density.png}\\
       \small Surface charge density on the plates
     \end{column}
-    \begin{column}{0.44\textwidth}
-      ... come calcolare capacità, solo con carica ...
+    \begin{column}{0.35\textwidth}
+
+    \textbf{Charge method:}
+    \[
+    C = \frac{|Q|}{V_1 - V_2}, \qquad Q = \varepsilon_0 \oint_{\Gamma_p} \frac{\partial u}{\partial n} \, d\Gamma
+    \]
+    {\scriptsize $Q$ = charge/unit length on plate $\Gamma_p$}
     \end{column}
     
   \end{columns}
