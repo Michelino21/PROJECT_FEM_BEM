@@ -390,7 +390,7 @@
   \begin{columns}
     \begin{column}{0.48\textwidth}
       \centering
-      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0020/margin_10/png/L2_norm.png}\\
+      \includegraphics[width=\linewidth]{Documentation/runs/mesh_0050/margin_3/png/L2_norm.png}\\
       \small $L^2$ error vs.\ FEM domain size
     \end{column}
     \begin{column}{0.48\textwidth}
@@ -403,8 +403,8 @@
   \medskip
   \begin{block}{Efficiency gain \textit{on my computer}}
     \begin{itemize}
-      \item FEM-BEM ($10\,L_y$ domain): \textbf{27.6 s}
-      \item Pure FEM ($100\,L_y$ domain): \textbf{3363 s} ($\approx 56$ min)
+      \item FEM-BEM ($3\,L_y$ domain): \textbf{8.52 s}
+      \item Pure FEM ($50\,L_y$ domain): \textbf{2800 s} ($\approx 47$ min)
     \end{itemize}
   \end{block}
 
@@ -521,12 +521,15 @@
       \small Surface charge density on the plates
     \end{column}
     \begin{column}{0.35\textwidth}
-
-    \textbf{Charge method:}
+\textbf{Charge method:}
     \[
-    C = \frac{|Q|}{V_1 - V_2}, \qquad Q = \varepsilon_0 \oint_{\Gamma_p} \frac{\partial u}{\partial n} \, d\Gamma
+    C = \frac{|Q|}{V_1 - V_2}
     \]
-    {\scriptsize $Q$ = charge/unit length on plate $\Gamma_p$}
+    \begin{itemize}
+        \item $C_{\text{FEM-BEM}} = 9.9811 \times 10^{-12}$ F/m
+        \item $C_{\text{FEM}} = 9.9824 \times 10^{-12}$ F/m
+    \end{itemize}
+
     \end{column}
     
   \end{columns}
