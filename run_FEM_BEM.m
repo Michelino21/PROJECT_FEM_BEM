@@ -13,8 +13,8 @@ params.V1               = +0.5;
 params.V2               = -0.5;
 
 % === SALVATAGGIO ===
-params.SALVATAGGIO    = 1;
-params.ERROR_ANALYSIS = 0;
+params.SALVATAGGIO    = 1; %Attiva funzioni di salvataggio automatico dell'output
+params.ERROR_ANALYSIS = 0; %Esegue codice per lo studio dell'errore
 params.margini_list = [params.margin_BEM_coeff, 50];
 
 % === CHIAMA LA FUNZIONE ===
