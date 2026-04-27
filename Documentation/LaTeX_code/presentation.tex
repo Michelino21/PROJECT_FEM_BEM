@@ -10,6 +10,19 @@
 \usepackage{xcolor}
 \usepackage{tikz}
 
+\usepackage{dirtree}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% Colori per le categorie
+\definecolor{colMain}{RGB}{0,70,140}
+\definecolor{colAssembly}{RGB}{180,60,0}
+\definecolor{colMesh}{RGB}{0,120,60}
+\definecolor{colPost}{RGB}{120,0,120}
+\definecolor{colTools}{RGB}{100,80,0}
+\definecolor{colError}{RGB}{160,0,40}
+ 
+\newcommand{\cmt}[2]{{\footnotesize\texttt{#1}\enspace{\color{gray!80!black}--- #2}}}
 % -------------------------------------------------------
 % Title info
 % -------------------------------------------------------
@@ -238,32 +251,32 @@
 % ===============================================================
 \section{FEM-BEM Coupling}
 % ===============================================================
-
 \begin{frame}{Coupled System and Plates Conditions}
-
   Replace the open FEM boundary rows with the BEM equations:
-
   \[
     \begin{bmatrix}
-      S_{II}  & S_{IB}  & 0        \\[4pt]
-      S_{BI}  & S_{BB}  & -T_{BB}  \\[4pt]
-      0       & H       & -G
+      S_{FF} & S_{FD} & S_{FB} \\[4pt]
+      S_{DF} & S_{DD} & S_{DB} \\[4pt]
+      S_{BF} & S_{BD} & S_{BB}
     \end{bmatrix}
     \begin{bmatrix}
-      \textcolor{blue}{u_I} \\[4pt] \textcolor{blue}{u_B} \\[4pt]
-      \textcolor{red}{\partial u_B/\partial n}
+      \textcolor{blue}{u_F} \\[4pt]
+      \textcolor{blue}{u_D} \\[4pt]
+      \textcolor{blue}{u_B}
+    \end{bmatrix}
+    -
+    \begin{bmatrix}
+      0 \\[4pt] 0 \\[4pt] -T_{BB}\,\textcolor{red}{\dfrac{\partial u_B}{\partial n}}
     \end{bmatrix}
     =
     \begin{bmatrix} \mathbf{0} \\ \mathbf{0} \\ \mathbf{0} \end{bmatrix}
   \]
-
   \medskip
   \begin{itemize}
-    \item \textbf{Row 1 (FEM, interior):} governs $u$ inside $\Omega$.
-    \item \textbf{Row 2 (FEM, boundary):} couples $u_I$, $u_B$ with the flux.
-    \item \textbf{Row 3 (BEM):} closes the system via integral operators on $\partial\Omega$.
+    \item \textbf{Row 1 (FEM, free):} governs $u$ at unconstrained interior nodes.
+    \item \textbf{Row 2 (FEM, Dirichlet):} enforces the prescribed potential on the plates.
+    \item \textbf{Row 3 (FEM--BEM, boundary):} couples the FEM domain to the exterior via $T_{BB}\,G^{-1}H$.
   \end{itemize}
-
 \end{frame}
 
 % -------------------------------------------------------
@@ -358,7 +371,7 @@
     \begin{column}{0.48\textwidth}
       \centering
       \includegraphics[width=0.6\linewidth]{Documentation/runs/mesh_0050/margin_3/png/FEM_50_BEM_3.png}\\
-      \small Pure FEM ($20\,L_y$ domain) — reference solution
+      \small Pure FEM ($50\,L_y$ domain) — reference solution
     \end{column}
     \begin{column}{0.48\textwidth}
       \centering
@@ -579,5 +592,172 @@
   \end{itemize}
 
 \end{frame}
+
+
+\begin{frame}{Simulation Parameters}
+
+\begin{columns}[T]
+
+% --- Left column ---
+\begin{column}{0.48\textwidth}
+  \textbf{\color{blue!70!black}Physical Domain}
+  \vspace{0.3em}
+  \begin{tabular}{@{}lp{4.2cm}@{}}
+    \toprule
+    \texttt{Lx}, \texttt{Ly} & Dimensions of the rectangular domain [m] \\
+    \texttt{delx}, \texttt{dely} & Spatial discretization step (FEM grid) [m] \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{0.8em}
+  \textbf{\color{blue!70!black}Medium Properties}
+  \vspace{0.3em}
+  \begin{tabular}{@{}lp{4.2cm}@{}}
+    \toprule
+    \texttt{e0} & Permittivity of free space $\varepsilon_0 = 8.85\times10^{-12}$ F/m \\
+    \texttt{er} & Relative permittivity of the medium $\varepsilon_r$ \\
+    \bottomrule
+  \end{tabular}
+\end{column}
+
+% --- Right column ---
+\begin{column}{0.50\textwidth}
+  \textbf{\color{blue!70!black}FEM--BEM Coupling}
+  \vspace{0.3em}
+  \begin{tabular}{@{}lp{4.2cm}@{}}
+    \toprule
+    \texttt{margin\_BEM\_coeff} & Coefficient defining the margin relative to $L_y$: margin $= \alpha \cdot L_y$ \\
+    \texttt{margini\_list} & List of BEM margins to test (e.g.\ error analysis) \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{0.8em}
+  \textbf{\color{blue!70!black}Boundary Conditions}
+  \vspace{0.3em}
+  \begin{tabular}{@{}lp{4.2cm}@{}}
+    \toprule
+    \texttt{V1} & Potential applied to conductor~1 [V] \\
+    \texttt{V2} & Potential applied to conductor~2 [V] \\
+    \bottomrule
+  \end{tabular}
+
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+%% ============================================================
+%% SLIDE 1 — General structure (without Assembly detail)
+%% ============================================================
+\begin{frame}[fragile]{Code Structure -- Overview}
+\vspace{-7pt}
+\begin{columns}[T]
+\begin{column}{0.44\textwidth}
+\scriptsize
+\dirtree{%
+.1 \textcolor{colMain}{run\_FEM\_BEM.m}.
+.1 \textcolor{colMain}{src/}.
+.2 \textcolor{colMain}{FEM\_BEM.m}.
+.2 \textcolor{colMesh}{Mesh/}.
+.3 meshgen\_cap.m.
+.2 \textcolor{colPost}{PostProcessing/}.
+.3 Efield.m.
+.3 compute\_capacitance.m.
+.3 create2darray.m.
+.2 \textcolor{colError}{Error/}.
+.3 error\_FEM.m.
+.3 solve\_FEM.m.
+.2 \textcolor{colTools}{Tools/}.
+.3 reorder\_boundary.m.
+.3 salva\_fig.m.
+}
+\end{column}
+
+\begin{column}{0.54\textwidth}
+\scriptsize
+\setlength{\parskip}{2pt}
+
+{\color{colMain}\textbf{Entry point \& control}}\\
+\cmt{run\_FEM\_BEM.m}{sets parameters and calls \texttt{FEM\_BEM}}\\
+\cmt{FEM\_BEM.m}{main function: orchestrates mesh, assembly, solve and post-processing}
+
+\vspace{2pt}
+{\color{colMesh}\textbf{Mesh}}\\
+\cmt{meshgen\_cap.m}{generates the mesh for the capacitor problem}
+
+\vspace{2pt}
+{\color{colPost}\textbf{Post-processing}}\\
+\cmt{Efield.m}{computes the electric field $\mathbf{E} = -\nabla V$}\\
+\cmt{compute\_capacitance.m}{computes capacitance via the energy method}
+
+\vspace{2pt}
+{\color{colError}\textbf{Error Analysis}}\\
+\cmt{solve\_FEM.m}{pure FEM solution}\\
+\cmt{error\_FEM.m}{comparison between FEM and FEM--BEM}
+
+\vspace{2pt}
+{\color{colTools}\textbf{Utilities}}\\
+\cmt{reorder\_boundary.m}{reorders boundary nodes counter-clockwise}\\
+\cmt{salva\_fig.m}{saves figures in the required formats}
+\cmt{create2darray.m}{reconstructs the 2D grid for visualization}
+
+\end{column}
+\end{columns}
+\end{frame}
+
+%% ============================================================
+%% SLIDE 2 — Assembly detail
+%% ============================================================
+\begin{frame}[fragile]{Code Structure -- \texttt{src/Assembly}}
+\vspace{-7pt}
+\begin{columns}[T]
+
+\begin{column}{0.44\textwidth}
+\scriptsize
+\dirtree{%
+.1 \textcolor{colAssembly}{Assembly/}.
+.2 assemble\_S.m.
+.2 assemble\_T.m.
+.2 assemble\_G\_H.m.
+.2 \textcolor{colAssembly}{BEM\_G\_H/}.
+.3 findG.m.
+.3 findG\_lin\_s.m.
+.3 findH.m.
+.3 intG.m.
+.3 intH.m.
+.3 shape\_fun.m.
+.3 find\_N.m.
+.3 find\_R.m.
+.3 abs\_J.m.
+}
+\end{column}
+
+\begin{column}{0.54\textwidth}
+\scriptsize
+\setlength{\parskip}{2pt}
+
+{\color{colAssembly}\textbf{Global assembly functions}}\\
+\cmt{assemble\_S.m}{assembles the FEM stiffness matrix}\\
+\cmt{assemble\_T.m}{assembles the FEM--BEM coupling matrix}\\
+\cmt{assemble\_G\_H.m}{loops over boundary elements and assembles $\mathbf{G}$, $\mathbf{H}$, calling the required subroutines}
+
+\vspace{6pt}
+{\color{colAssembly}\textbf{BEM subroutines -- boundary integrals}}\\[2pt]
+\cmt{findG.m}{element-level submatrix $G$}\\
+\cmt{findH.m}{element-level submatrix $H$}\\
+\cmt{findG\_lin\_s.m}{version of findG.m with singularity treatment}\\[4pt]
+\cmt{intG.m}{integrates the kernel $\ln(r)$}\\
+\cmt{intH.m}{integrates the kernel $1/r$}\\[4pt]
+\cmt{shape\_fun.m}{evaluates BEM shape functions on the element}\\
+\cmt{find\_N.m}{outward normals on the boundary element}\\
+\cmt{find\_R.m}{distance vector $r$ between field and source point}\\
+\cmt{abs\_J.m}{computes the boundary element Jacobian}
+
+\end{column}
+\end{columns}
+\end{frame}
+
+
 
 \end{document}
