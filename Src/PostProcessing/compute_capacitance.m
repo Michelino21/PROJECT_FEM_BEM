@@ -30,11 +30,11 @@ function [C_energy_all,C_energy_inside,C_energy_clean] = compute_capacitance(V1,
     fprintf('\n');
     fprintf('------- CAPACITANCE ENERGY METHOD -------\n');
     fprintf('Capacitance in all the BEM domain       : %.6g F/m\n', C_energy_all);
-    fprintf('Capacitance inside the capacitor        : %.6g F/m\n', C_energy_inside);
-    fprintf('Capacitance inside the capacitor clean  : %.6g F/m\n', C_energy_clean);
+    %fprintf('Capacitance inside the capacitor        : %.6g F/m\n', C_energy_inside);
+    %fprintf('Capacitance inside the capacitor clean  : %.6g F/m\n', C_energy_clean);
     fprintf('Theoretical capacitance (infinite plate): %.6g F/m\n', C_theoretical);
     fprintf('Relative error all BEM                  : %.4g%%\n', error_percent_energy_all);
-    fprintf('Relative error inside capacitor         : %.4g%%\n', error_percent_energy_inside);
-    fprintf('Relative error inside capacitor         : %.4g%%\n', error_percent_energy_clean);
+    %fprintf('Relative error inside capacitor         : %.4g%%\n', error_percent_energy_inside);
+    %fprintf('Relative error inside capacitor         : %.4g%%\n', error_percent_energy_clean);
   
 end

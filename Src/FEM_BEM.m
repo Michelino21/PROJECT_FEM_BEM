@@ -461,20 +461,32 @@ function FEM_BEM(params)
     
     % Trova elementi che contengono almeno un nodo della piastra superiore
     elements_top = [];
+    elements_top_out = [];
     for e = 1:M
         nodes_in_element = conn(e, :);
         if any(ismember(nodes_in_element, ptop_node))
-            % Verifica che l'elemento sia nel gap (sotto la piastra)
+            
+            
             y_centroid = mean(y(nodes_in_element));
             y_plate_top = y(ptop_node(1));  % y della piastra superiore
+
+            % Verifica che l'elemento sia nel gap (sotto la piastra)
             if y_centroid < y_plate_top  % Elemento sotto la piastra
                 elements_top = [elements_top; e];
             end
+
+            % Verifica che l'elemento sia nel gap (sopra la piastra)
+            if y_centroid > y_plate_top  % Elemento sotto la piastra
+                elements_top_out = [elements_top_out; e];
+            end
+
+
         end
     end
     
     % Trova elementi adiacenti alla piastra inferiore
     elements_bottom = [];
+    elements_bottom_out = [];
     for e = 1:M
         nodes_in_element = conn(e, :);
         if any(ismember(nodes_in_element, pbottom_node))
@@ -483,6 +495,11 @@ function FEM_BEM(params)
             y_plate_bottom = y(pbottom_node(1));  % y della piastra inferiore
             if y_centroid > y_plate_bottom  % Elemento sopra la piastra
                 elements_bottom = [elements_bottom; e];
+            end
+
+            % Verifica che l'elemento sia nel gap (sotto la piastra)
+            if y_centroid < y_plate_bottom  % Elemento sotto la piastra
+                elements_bottom_out = [elements_bottom_out; e];
             end
         end
     end
@@ -504,6 +521,15 @@ function FEM_BEM(params)
         E_vec = [Ex(e); Ey(e)];
         En_top(i) = dot(E_vec, n_top);
     end
+
+    % Proiezione del campo E sulla normale per piastra superiore (elementi
+    % esterni)
+    En_top_out = zeros(length(elements_top_out), 1);
+    for i = 1:length(elements_top_out)
+        e = elements_top_out(i);
+        E_vec_out = [Ex(e); Ey(e)];
+        En_top_out(i) = dot(E_vec_out, -n_top);
+    end
     
     % Proiezione del campo E sulla normale per piastra inferiore
     En_bottom = zeros(length(elements_bottom), 1);
@@ -512,6 +538,13 @@ function FEM_BEM(params)
         E_vec = [Ex(e); Ey(e)];
         En_bottom(i) = dot(E_vec, n_bottom);
     end
+
+    En_bottom_out = zeros(length(elements_bottom_out), 1);
+    for i = 1:length(elements_bottom_out)
+        e = elements_bottom_out(i);
+        E_vec_out = [Ex(e); Ey(e)];
+        En_bottom_out(i) = dot(E_vec_out, -n_bottom);
+    end
     
     % ========================================================================
     % Calcola la densità di carica per elemento
@@ -519,9 +552,14 @@ function FEM_BEM(params)
     
     % Densità di carica per elementi adiacenti alla piastra superiore
     sigma_top = e0 * er * En_top;
+
+    % Densità di carica per elementi adiacenti alla piastra superiore OUT
+    sigma_top_out = e0 * er * En_top_out;
     
     % Densità di carica per elementi adiacenti alla piastra inferiore
-    sigma_bottom = e0 * er *En_bottom;
+    sigma_bottom = e0 * er * En_bottom;
+
+    sigma_bottom_out = e0 * er * En_bottom_out;
     
     % ========================================================================
     % Calcola Q (carica totale per unità di lunghezza)
@@ -541,17 +579,29 @@ function FEM_BEM(params)
         nodes_on_plate = nodes_in_element(ismember(nodes_in_element, ptop_node));
         
         if length(nodes_on_plate) >= 2
-            % Calcola lunghezza del lato sulla piastra
-            %x1 = x(nodes_on_plate(1));
-            %y1 = y(nodes_on_plate(1));
-            %x2 = x(nodes_on_plate(2));
-            %y2 = y(nodes_on_plate(2));
-            
-            %length_segment = sqrt((x2-x1)^2 + (y2-y1)^2);
             
             length_segment = abs(x(nodes_on_plate(2)) - x(nodes_on_plate(1)));
+            
             % Contributo alla carica totale
             Q_top = Q_top + sigma_top(i) * length_segment;
+        end
+    end
+
+    Q_top_out = 0;
+    for i = 1:length(elements_top_out)
+        e = elements_top_out(i);
+        nodes_in_element = conn(e, :);
+        
+        % Trova il lato dell'elemento che giace sulla piastra
+        % (i nodi che appartengono a ptop_node)
+        nodes_on_plate = nodes_in_element(ismember(nodes_in_element, ptop_node));
+        
+        if length(nodes_on_plate) >= 2
+            
+            length_segment = abs(x(nodes_on_plate(2)) - x(nodes_on_plate(1)));
+            
+            % Contributo alla carica totale
+            Q_top_out = Q_top_out + sigma_top_out(i) * length_segment;
         end
     end
     
@@ -578,19 +628,44 @@ function FEM_BEM(params)
         end
     end
     
+    Q_bottom_out = 0;
+    for i = 1:length(elements_bottom_out)
+        e = elements_bottom_out(i);
+        nodes_in_element = conn(e, :);
+        
+        % Trova il lato dell'elemento che giace sulla piastra
+        % (i nodi che appartengono a pbottom_node)
+        nodes_on_plate = nodes_in_element(ismember(nodes_in_element, pbottom_node));
+        
+        if length(nodes_on_plate) >= 2
+            % Calcola lunghezza del lato sulla piastra
+            %x1 = x(nodes_on_plate(1));
+            %y1 = y(nodes_on_plate(1));
+            %x2 = x(nodes_on_plate(2));
+            %y2 = y(nodes_on_plate(2));
+            
+            %length_segment = sqrt((x2-x1)^2 + (y2-y1)^2);
+            
+            length_segment = abs(x(nodes_on_plate(2)) - x(nodes_on_plate(1)));
+            % Contributo alla carica totale
+            Q_bottom_out = Q_bottom_out + sigma_bottom_out(i) * length_segment;
+        end
+    end
     % ========================================================================
     % Risultati
     % ========================================================================
     fprintf('\n');
     fprintf('------- CHARGE on PLATES -------\n')
     fprintf('Total charge upper plate  (Q_top)   : %.6e C/m\n', Q_top);
+    fprintf('Total charge upper plate  (Q_top_out)   : %.6e C/m\n', Q_top_out);
     fprintf('Total charge lower plate  (Q_bottom): %.6e C/m\n', Q_bottom);
-    fprintf('Sum (Q_tot)               : %.6e C/m\n', Q_top + Q_bottom);
-    fprintf('Ratio Q_top/Q_bot         : %.6e\n', Q_top/Q_bottom);
+    fprintf('Total charge lower plate  (Q_bottom_out)   : %.6e C/m\n', Q_bottom_out);
+    fprintf('Sum (Q_tot)               : %.6e C/m\n', Q_top + Q_bottom + Q_top_out + Q_bottom_out);
+    fprintf('Ratio Q_top/Q_bot         : %.6e\n', (Q_top+Q_top_out)/(Q_bottom+Q_bottom_out));
     
     % Densità di carica media
-    sigma_top_mean = mean(sigma_top);
-    sigma_bottom_mean = mean(sigma_bottom);
+    sigma_top_mean = mean(sigma_top + sigma_top_out);
+    sigma_bottom_mean = mean(sigma_bottom + sigma_bottom_out);
     
     fprintf('\n');
     fprintf('Average charge density upper plate: %.6e C/m^2\n', sigma_top_mean);
@@ -599,14 +674,14 @@ function FEM_BEM(params)
     % visualizza la distribuzione di carica
     figure;
     subplot(2,1,1);
-    plot(sigma_top, 'o-');
+    plot(sigma_top+sigma_top_out, 'o-');
     title('Charge Density - Upper Plate');
     xlabel('Element index');
     ylabel('\sigma [C/m^2]');
     grid on;
     
     subplot(2,1,2);
-    plot(sigma_bottom, 'o-');
+    plot(sigma_bottom+sigma_bottom_out, 'o-');
     title('Charge Density - Lower Plate');
     xlabel('Element index');
     ylabel('\sigma [C/m^2]');
@@ -620,12 +695,14 @@ function FEM_BEM(params)
     
     % Capacitanza usando la carica dalla piastra superiore
     C_from_top = abs(Q_top) / Delta_V;
+    C_from_top_out = abs(Q_top_out) / Delta_V;
     
     % Capacitanza usando la carica dalla piastra inferiore
     C_from_bottom = abs(Q_bottom) / Delta_V;
+    C_from_bottom_out = abs(Q_bottom_out) / Delta_V;
     
     % Capacitanza media (dovrebbero essere quasi uguali)
-    C = (C_from_top + C_from_bottom) / 2;
+    C = (C_from_top + C_from_top_out + C_from_bottom + C_from_bottom_out) / 2;
     
     % ========================================================================
     % Confronto con soluzione analitica (condensatore piano ideale)
@@ -639,17 +716,19 @@ function FEM_BEM(params)
 
     fprintf('\n');
     fprintf('------- CAPACITANCE CHARGE METHOD -------\n');
-    fprintf('Capacitance (from upper plate)          : %.6e F/m\n', C_from_top);
-    fprintf('Capacitance (from lower plate)          : %.6e F/m\n', C_from_bottom);
+    %fprintf('Capacitance (from upper plate)          : %.6e F/m\n', C_from_top);
+    fprintf('Capacitance (from upper plate)          : %.6e F/m\n', C_from_top + C_from_top_out);
+    %fprintf('Capacitance (from lower plate)          : %.6e F/m\n', C_from_bottom);
+    fprintf('Capacitance (from lower plate)          : %.6e F/m\n', C_from_bottom + C_from_bottom_out);
     fprintf('Average capacitance                     : %.6e F/m\n', C);
     fprintf('Theoretical capacitance (infinite plate): %.6e F/m\n', C_theoretical);
     fprintf('Relative error                          : %.4f%%\n', error_percent);
     fprintf('\n');
     fprintf('Lx : %.6f m\n', Lx);
     fprintf('Ly = %.6f m\n', Ly);
-    fprintf('Q_{top}    : %+.6e C/m\n', Q_top);
-    fprintf('Q_{bottom} : %+.6e C/m\n', Q_bottom);
-    fprintf('Q_{sum}    : %+.6e C/m\n', Q_top + Q_bottom);
+    fprintf('Q_{top}    : %+.6e C/m\n', Q_top + Q_top_out);
+    fprintf('Q_{bottom} : %+.6e C/m\n', Q_bottom + Q_bottom_out);
+    fprintf('Q_{sum}    : %+.6e C/m\n', Q_top +  Q_top_out + Q_bottom + Q_bottom_out);
     fprintf('ΔV         : %.6f V\n', Delta_V);
 
     %%  === CAPACITA' Energia Dominio FEM === (Step 4.c)

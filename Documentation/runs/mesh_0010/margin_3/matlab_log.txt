@@ -1,0 +1,38 @@
+
+--- GEOMETRIC PARAMETERS ---
+Lx               : 0.1000 m
+Ly               : 0.1000 m
+delx             : 0.0010 m
+dely             : 0.0010 m
+
+--- DOMAIN DIMENSIONS ---
+margin_BEM_coeff : 3
+margin           : 0.3000 m
+X_mesh           : 0.7000 m
+Y_mesh           : 0.7000 m
+
+--- PHYSICAL PARAMETERS ---
+e0               : 8.8500e-12 F/m
+er               : 1.0000
+V1               : 0.5000 V
+V2               : -0.5000 V
+
+--- MESH ---
+Time of mesh generation: 1.1297 s
+Mesh Dimension: 491401
+Connectivity Dimension: 980000
+
+--- NODES ---
+Nodes on the plates: 202
+Nodes on the boundary: 2800
+Other Nodes: 488399
+
+--- ASSEMBLE S ---
+Time of assemble S: 636.6299 s
+Element in S (sparse): 2454201
+Sparsity Percentage: 0.001016
+
+--- ASSEMBLE T ---
+Time of assemble T: 0.0284 s
+Element in T (sparse): 8400
+Sparsity Percentage: 0.1071

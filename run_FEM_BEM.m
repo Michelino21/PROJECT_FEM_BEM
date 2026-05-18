@@ -2,9 +2,9 @@ clear all; close all; clc;
 addpath(genpath('src'));
 
 % === PARAMETRI ===
-params.Lx               = 0.05;
-params.Ly               = 0.05;
-params.delx             = 0.003;
+params.Lx               = 0.1;
+params.Ly               = 0.1;
+params.delx             = 0.001;
 params.dely             = params.delx;
 params.margin_BEM_coeff = 3;
 params.e0               = 8.85e-12;
