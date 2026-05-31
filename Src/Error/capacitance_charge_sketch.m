@@ -1,5 +1,11 @@
  %% === DENSITA' DI CARICA SULLE PIASTRE  === (Step 4)
-    
+ 
+ % Dopo aver usato il codice, se si ricarica l'ambiente matlab, si può
+ % usare questo per calcolare la capacità con il metodo della carica,
+ % sull'ultimo dominio disponibile, quindi il fem di dimensione massima (in
+ % genere)
+
+
     % ========================================================================
     % Recupera E su piastra alta e bassa
     % ========================================================================

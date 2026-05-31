@@ -1,3 +1,4 @@
+%% THIS IS AN IDEA; IT'S NOT IMPLEMENTED
 function [] = add_error_FEM(Lx,Ly,delx,dely,e0,er,V1,V2,u_FEM_BEM,t_FEM_BEM,folder_name,SALVATAGGIO,margin_BEM_coeff,margini_list,x_r, y_r,outb_r, ptop_r, pbottom_r,TIME_mesh_bem_generation)
     
     fprintf('\n==========================================\n');

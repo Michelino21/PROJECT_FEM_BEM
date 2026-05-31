@@ -31,8 +31,13 @@ function FEM_BEM(params)
         mesh_str = sprintf('%04d', mesh_int);
         
         % Costruisce il path della cartella con mesh e margine
-        folder_name = sprintf('./Documentation/runs/mesh_%s/margin_%d', mesh_str, params.margin_BEM_coeff);
+        %folder_name = sprintf('./Documentation/runs/mesh_%s/margin_%d', mesh_str, params.margin_BEM_coeff);
         
+        t = datetime('now','Format','yyyyMMdd_HHmmss');
+
+        folder_name = sprintf('./Documentation/runs/mesh_%s/margin_%d_%s', ...
+            mesh_str, params.margin_BEM_coeff, string(t));
+
         folder_png  = fullfile(folder_name, 'png');
         folder_fig  = fullfile(folder_name, 'fig');
         
@@ -300,7 +305,7 @@ function FEM_BEM(params)
     %% === POTENZIALE INTERNO === (Step 1.a)
     
     % --- Plot potenziale (mappa colori) ---
-    [up, xp, yp] = create2darray(x, y, u, delx, dely);
+    [up, xp, yp] = create2darray(x, y, u, delx, dely)
     
     figure('Color', 'w');  % crea la figura con sfondo bianco
     clf;                   % pulisce la figura
@@ -578,13 +583,19 @@ function FEM_BEM(params)
         % (i nodi che appartengono a ptop_node)
         nodes_on_plate = nodes_in_element(ismember(nodes_in_element, ptop_node));
         
-        if length(nodes_on_plate) >= 2
-            
-            length_segment = abs(x(nodes_on_plate(2)) - x(nodes_on_plate(1)));
-            
-            % Contributo alla carica totale
-            Q_top = Q_top + sigma_top(i) * length_segment;
-        end
+
+
+        Q_top = Q_top + sigma_top(i) * delx/2;
+        
+
+        % if length(nodes_on_plate) >= 2
+        % 
+        %     length_segment = abs(x(nodes_on_plate(2)) - x(nodes_on_plate(1)));
+        % 
+        %     % Contributo alla carica totale
+        %     Q_top = Q_top + sigma_top(i) * length_segment;
+        % end
+
     end
 
     Q_top_out = 0;
@@ -596,13 +607,15 @@ function FEM_BEM(params)
         % (i nodi che appartengono a ptop_node)
         nodes_on_plate = nodes_in_element(ismember(nodes_in_element, ptop_node));
         
-        if length(nodes_on_plate) >= 2
-            
-            length_segment = abs(x(nodes_on_plate(2)) - x(nodes_on_plate(1)));
-            
-            % Contributo alla carica totale
-            Q_top_out = Q_top_out + sigma_top_out(i) * length_segment;
-        end
+        Q_top_out = Q_top_out + sigma_top_out(i) * delx/2;
+        % 
+        % if length(nodes_on_plate) >= 2
+        % 
+        %     length_segment = abs(x(nodes_on_plate(2)) - x(nodes_on_plate(1)));
+        % 
+        %     % Contributo alla carica totale
+        %     Q_top_out = Q_top_out + sigma_top_out(i) * length_segment;
+        % end
     end
     
     % Carica sulla piastra inferiore
